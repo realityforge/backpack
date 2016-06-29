@@ -13,6 +13,28 @@
 #
 
 module Backpack
+  class RepositoryHook < BaseElement
+    def initialize(repository, name, options, &block)
+      @repository, @name = repository, name
+      @events = ['push']
+      @active = true
+      @config = {}
+      super(options, &block)
+    end
+
+    attr_reader :name
+    attr_reader :repository
+
+    attr_writer :active
+
+    def active?
+      !!@active
+    end
+
+    attr_accessor :events
+    attr_accessor :config
+  end
+
   class Repository < BaseElement
     def initialize(organization, name, options, &block)
       @organization, @name = organization, name
@@ -20,6 +42,8 @@ module Backpack
       @admin_teams = []
       @pull_teams = []
       @push_teams = []
+
+      @hooks = {}
 
       options = options.dup
 
@@ -38,6 +62,10 @@ module Backpack
 
     attr_reader :organization
     attr_reader :name
+
+    def qualified_name
+      "#{self.organization.name}/#{self.name}"
+    end
 
     attr_writer :description
 
@@ -73,6 +101,24 @@ module Backpack
 
     def downloads?
       @downloads.nil? ? false : !!@downloads
+    end
+
+    def hook(name, config = {}, &block)
+      raise "Hook already exists with name #{name} for repository #{self.name}" if @hooks[name.to_s]
+      @hooks[name.to_s] = RepositoryHook.new(self, name, config, &block)
+    end
+
+    def hook_by_name?(name)
+      !!@hooks[name.to_s]
+    end
+
+    def hook_by_name(name)
+      raise "Hook with name #{name} does not exist for repository #{self.name}" unless @hooks[name.to_s]
+      @hooks[name.to_s]
+    end
+
+    def hooks
+      @hooks.values.dup
     end
 
     def admin_teams
