@@ -18,6 +18,7 @@ module Backpack #nodoc
       def converge(client, organization)
         converge_teams(client, organization)
         converge_repositories(client, organization)
+        converge_hooks(client, organization)
       end
 
       def converge_teams(client, organization)
@@ -142,6 +143,52 @@ module Backpack #nodoc
                                  :has_wiki => repository.wiki?,
                                  :has_downloads => repository.downloads?)
         end
+      end
+
+      def converge_hooks(client, organization)
+        organization.repositories.each do |repository|
+          remote_hooks = client.hooks(repository.qualified_name)
+          repository.hooks.each do |hook|
+            if remote_hooks.any? { |r| r['name'] == hook.name }
+              remote_hook = remote_hooks.select { |r| r['name'] == hook.name }[0]
+
+              update = false
+
+              update = true if remote_hook[:active] != hook.active?
+              update = true if remote_hook[:events].sort != hook.events.sort
+              update = true unless hash_same(remote_hook[:config].to_h, hook.config)
+
+              if update
+                puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
+                client.create_hook(repository.qualified_name,
+                                   hook.name,
+                                   hook.config,
+                                   :events => hook.events,
+                                   :active => hook.active?)
+              end
+              remote_hooks.delete(remote_hook)
+            else
+              puts "Creating #{hook.name} hook on repository #{repository.qualified_name}"
+              client.create_hook(repository.qualified_name,
+                                 hook.name,
+                                 hook.config,
+                                 :events => hook.events,
+                                 :active => hook.active?)
+            end
+          end
+          remote_hooks.each do |remote_hook|
+            puts "Removing #{remote_hook['name']} hook on repository #{repository.qualified_name}"
+            client.remove_hook(repository.qualified_name, remote_hook['id'])
+          end
+        end
+      end
+
+      def hash_same(hash1, hash2)
+        return false if hash1.size != hash2.size
+        hash1.keys.each do |key|
+          return false if hash1[key] != hash2[key]
+        end
+        true
       end
     end
   end
