@@ -40,3 +40,10 @@ A script should look look like:
     
     # Actually converge the organization
     Backpack::Driver.converge(client, Backpack.organization_by_name('my-awesome-organization'))
+
+## Development
+
+Backpack uses the underlying [Octokit](http://octokit.github.io/octokit.rb/) library to interact with
+the github API. It is reasonably easy to use but does require some reading of API docs and some familiarity
+with the [Github V3 API](https://developer.github.com/v3/). Before diving into the code it is best to
+review this before hacking on this project.
