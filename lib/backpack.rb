@@ -15,6 +15,7 @@
 require 'octokit'
 require 'fileutils'
 
+require 'backpack/version'
 require 'backpack/core'
 require 'backpack/model'
 require 'backpack/driver'
