@@ -30,7 +30,8 @@ module Backpack #nodoc
             team.github_id = remote_team['id']
             converge_team(client, team, remote_team)
           else
-            puts "WARNING: Unmanaged team detected named '#{name}'"
+            puts "Removing team named #{name}"
+            client.delete_team(remote_team['id'])
           end
         end
         organization.teams.each do |team|
