@@ -151,8 +151,25 @@ module Backpack #nodoc
         organization.repositories.each do |repository|
           remote_hooks = client.hooks(repository.qualified_name)
           repository.hooks.each do |hook|
-            if remote_hooks.any? { |r| r['name'] == hook.name }
-              remote_hook = remote_hooks.select { |r| r['name'] == hook.name }[0]
+            candidate_hooks = remote_hooks.select do |r|
+              if hook.singleton?
+                r['name'] == hook.name
+              else
+                r['name'] == hook.type && r['config'][hook.config_key] == hook.config[hook.config_key]
+              end
+            end
+            if candidate_hooks.size > 1
+              raise "Multiple existing hooks matched hook #{hook.name}. #{candidate_hooks.inspect}"
+            end
+            if candidate_hooks.empty?
+              puts "Creating #{hook.name} hook on repository #{repository.qualified_name}"
+              client.create_hook(repository.qualified_name,
+                                 hook.type,
+                                 hook.config,
+                                 :events => hook.events,
+                                 :active => hook.active?)
+            else
+              remote_hook = candidate_hooks[0]
 
               update = false
 
@@ -163,19 +180,12 @@ module Backpack #nodoc
               if update
                 puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
                 client.create_hook(repository.qualified_name,
-                                   hook.name,
+                                   hook.type,
                                    hook.config,
                                    :events => hook.events,
                                    :active => hook.active?)
               end
               remote_hooks.delete(remote_hook)
-            else
-              puts "Creating #{hook.name} hook on repository #{repository.qualified_name}"
-              client.create_hook(repository.qualified_name,
-                                 hook.name,
-                                 hook.config,
-                                 :events => hook.events,
-                                 :active => hook.active?)
             end
           end
           remote_hooks.each do |remote_hook|

@@ -25,12 +25,24 @@ module Backpack
     attr_reader :name
     attr_reader :repository
 
+    attr_writer :type
+
+    def type
+      @type.nil? ? self.name : @type
+    end
+
     attr_writer :active
 
     def active?
       !!@active
     end
 
+    def singleton?
+      @config_key.nil?
+    end
+
+    # Key inside config data that uniquely identifies hook
+    attr_accessor :config_key
 
     attr_writer :password_config_keys
 
