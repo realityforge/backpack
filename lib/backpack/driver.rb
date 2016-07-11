@@ -158,7 +158,7 @@ module Backpack #nodoc
 
               update = true if remote_hook[:active] != hook.active?
               update = true if remote_hook[:events].sort != hook.events.sort
-              update = true unless hash_same(remote_hook[:config].to_h, hook.config)
+              update = true unless hash_same(remote_hook[:config].to_h, hook.config, hook.password_config_keys)
 
               if update
                 puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
@@ -185,9 +185,10 @@ module Backpack #nodoc
         end
       end
 
-      def hash_same(hash1, hash2)
+      def hash_same(hash1, hash2, skip_keys)
         return false if hash1.size != hash2.size
         hash1.keys.each do |key|
+          next if skip_keys.include?(key.to_s)
           return false if hash1[key] != hash2[key]
         end
         true

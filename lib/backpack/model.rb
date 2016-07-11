@@ -31,6 +31,13 @@ module Backpack
       !!@active
     end
 
+
+    attr_writer :password_config_keys
+
+    def password_config_keys
+      @password_config_keys ||= []
+    end
+
     attr_accessor :events
     attr_accessor :config
   end
