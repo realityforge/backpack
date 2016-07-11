@@ -85,6 +85,7 @@ module Backpack #nodoc
 
         remote_repositories.each do |remote_repository|
           name = remote_repository['name']
+          next unless organization.repository_by_name?(name)
           repository = organization.repository_by_name(name)
 
           repository_full_name = "#{organization.name}/#{repository.name}"
@@ -93,7 +94,7 @@ module Backpack #nodoc
             name = remote_team['name']
             if repository.team_by_name?(name)
               permission =
-                  repository.admin_team_by_name?(name) ? 'admin' : repository.push_team_by_name?(name) ? 'push' : 'pull'
+                repository.admin_team_by_name?(name) ? 'admin' : repository.push_team_by_name?(name) ? 'push' : 'pull'
 
               team = organization.team_by_name(name)
               update = false
