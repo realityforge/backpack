@@ -46,6 +46,8 @@ module Backpack
     def initialize(organization, name, options, &block)
       @organization, @name = organization, name
 
+      @tags = []
+
       @admin_teams = []
       @pull_teams = []
       @push_teams = []
@@ -73,6 +75,8 @@ module Backpack
     def qualified_name
       "#{self.organization.name}/#{self.name}"
     end
+
+    attr_accessor :tags
 
     attr_writer :description
 
