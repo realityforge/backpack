@@ -18,4 +18,32 @@ class Backpack::Repository
          :events => %w(push pull_request),
          :config => {:address => email_address, :send_from_author => '0'})
   end
+
+  def jira_hook(jira_endpoint_url)
+    hook('jira-hook',
+         :type => 'web',
+         :config_key => :url,
+         :events => %w(issue_comment pull_request pull_request_review_comment push),
+         :config => {:content_type => 'json', :url => jira_endpoint_url})
+  end
+
+  def ci_hook(hook_endpoint_url)
+    hook('ci-hook',
+         :type => 'web',
+         :config_key => :url,
+         :events => %w(issue_comment pull_request),
+         :config => {:insecure_ssl => '1', :url => hook_endpoint_url})
+
+  end
+
+  def docker_hook
+    hook('docker', :events => %w(push), :config => {})
+  end
+
+  def travis_hook(user, token)
+    hook('travis',
+         :events => %w(issue_comment member public pull_request push),
+         :password_config_keys => %w(token),
+         :config => {:domain => 'notify.travis-ci.org', :token => token, :user => user})
+  end
 end
