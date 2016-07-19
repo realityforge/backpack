@@ -6,7 +6,7 @@ converge action to make the organization look like the description.
 
 ## Configuration
 
-Backpack at this stage is under heavy development and the configuration is via explict code. In this scenario
+Backpack at this stage is under heavy development and the configuration is via explicit code. In this scenario
 it is recommended that you create an executable script that declares the organization(s) and explicitly converges
 the organizations. In the future it is likely that there will be additional tooling surrounding this process.
 A script should look look like:
