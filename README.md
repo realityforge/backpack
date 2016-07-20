@@ -12,18 +12,18 @@ the organizations. In the future it is likely that there will be additional tool
 A script should look look like:
 
     require 'backpack'
-    
+
     Backpack.organization('my-awesome-organization') do |o|
       o.team('TeamA')
       o.team('TeamB')
       o.team('Tools')
-    
+
       # Repository only TeamA can push to
       o.repository('repo-1', :description => 'does stuff', :push_teams => ['TeamA'])
-      
+
       # Repository TeamA can push to and TeamB can read from
       o.repository('repo-2', :push_teams => ['TeamA'], :pull_teams => ['TeamB'])
-      
+
       # Repository both TeamA and TeamB can write to
       o.repository('repo-3', :push_teams => ['TeamA','TeamB'])
 
@@ -37,7 +37,7 @@ A script should look look like:
     # Note: auto_paginate is required to be true
     client = Octokit::Client.new(:netrc => true, :auto_paginate => true)
     client.login
-    
+
     # Actually converge the organization
     Backpack::Driver.converge(client, Backpack.organization_by_name('my-awesome-organization'))
 
