@@ -16,9 +16,11 @@ module Backpack #nodoc
   class Driver
     class << self
       def converge(context, organization)
+        run_hook(context, :pre_organization, organization)
         converge_teams(context, organization)
         converge_repositories(context, organization)
         converge_hooks(context, organization)
+        run_hook(context, :post_organization, organization)
       end
 
       def converge_teams(context, organization)
@@ -59,13 +61,16 @@ module Backpack #nodoc
           name = remote_repository['name']
           if organization.repository_by_name?(name)
             repository = organization.repository_by_name(name)
+            run_hook(context, :pre_repository, repository)
             converge_repository(context.client, repository, remote_repository)
+            run_hook(context, :post_repository, repository)
           else
             puts "WARNING: Unmanaged repository detected named '#{name}'"
           end
         end
         organization.repositories.each do |repository|
           unless remote_repositories.any? { |r| r['name'] == repository.name }
+            run_hook(context, :pre_repository, repository)
             puts "Creating repository #{repository.name}"
             remote_repositories <<
               context.client.create_repository(repository.name,
@@ -76,6 +81,7 @@ module Backpack #nodoc
                                                :has_issues => repository.issues?,
                                                :has_wiki => repository.wiki?,
                                                :has_downloads => repository.downloads?)
+            run_hook(context, :post_repository, repository)
           end
         end
 
@@ -87,6 +93,7 @@ module Backpack #nodoc
 
         remote_repositories.each do |remote_repository|
           name = remote_repository['name']
+          # TODO: We should remove all permissions if repository is unconfigured
           next unless organization.repository_by_name?(name)
           repository = organization.repository_by_name(name)
 
@@ -205,6 +212,12 @@ module Backpack #nodoc
           return false if hash1[key] != hash2[key]
         end
         true
+      end
+
+      def run_hook(context, hook_key, element)
+        context.hooks.each do |hook|
+          hook.send(hook_key, element)
+        end
       end
     end
   end
