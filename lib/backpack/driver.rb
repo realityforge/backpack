@@ -15,50 +15,51 @@
 module Backpack #nodoc
   class Driver
     class << self
-      def converge(client, organization)
-        converge_teams(client, organization)
-        converge_repositories(client, organization)
-        converge_hooks(client, organization)
+      def converge(context, organization)
+        converge_teams(context, organization)
+        converge_repositories(context, organization)
+        converge_hooks(context, organization)
       end
 
-      def converge_teams(client, organization)
-        remote_teams = client.organization_teams(organization.name)
+      def converge_teams(context, organization)
+        remote_teams = context.client.organization_teams(organization.name)
         remote_teams.each do |remote_team|
           name = remote_team['name']
           if organization.team_by_name?(name)
             team = organization.team_by_name(name)
             team.github_id = remote_team['id']
-            converge_team(client, team, remote_team)
+            converge_team(context, team, remote_team)
           else
             puts "Removing team named #{name}"
-            client.delete_team(remote_team['id'])
+            context.client.delete_team(remote_team['id'])
           end
         end
         organization.teams.each do |team|
           unless remote_teams.any? { |r| r['name'] == team.name }
             puts "Creating team #{team.name}"
-            remote_team = client.create_team(organization.name, :name => team.name, :permission => team.permission)
+            remote_team = context.client.create_team(organization.name, :name => team.name, :permission => team.permission)
             team.github_id = remote_team['id']
           end
         end
       end
 
-      def converge_team(client, team, remote_team)
+      def converge_team(context, team, remote_team)
         update = false
         update = true if remote_team['permission'] != team.permission
 
         if update
           puts "Updating team #{team.name}"
-          client.update_team(team.github_id, :permission => team.permission)
+          context.client.update_team(team.github_id, :permission => team.permission)
         end
       end
 
-      def converge_repositories(client, organization)
-        remote_repositories = client.organization_repositories(organization.name)
+      def converge_repositories(context, organization)
+        remote_repositories = context.client.organization_repositories(organization.name)
         remote_repositories.each do |remote_repository|
           name = remote_repository['name']
           if organization.repository_by_name?(name)
-            converge_repository(client, organization.repository_by_name(name), remote_repository)
+            repository = organization.repository_by_name(name)
+            converge_repository(context.client, repository, remote_repository)
           else
             puts "WARNING: Unmanaged repository detected named '#{name}'"
           end
@@ -66,21 +67,22 @@ module Backpack #nodoc
         organization.repositories.each do |repository|
           unless remote_repositories.any? { |r| r['name'] == repository.name }
             puts "Creating repository #{repository.name}"
-            remote_repositories << client.create_repository(repository.name,
-                                                            :organization => repository.organization.name,
-                                                            :description => repository.description,
-                                                            :homepage => repository.homepage,
-                                                            :private => repository.private?,
-                                                            :has_issues => repository.issues?,
-                                                            :has_wiki => repository.wiki?,
-                                                            :has_downloads => repository.downloads?)
+            remote_repositories <<
+              context.client.create_repository(repository.name,
+                                               :organization => repository.organization.name,
+                                               :description => repository.description,
+                                               :homepage => repository.homepage,
+                                               :private => repository.private?,
+                                               :has_issues => repository.issues?,
+                                               :has_wiki => repository.wiki?,
+                                               :has_downloads => repository.downloads?)
           end
         end
 
         team_map = {}
-        client.organization_teams(organization.name).each do |remote_team|
+        context.client.organization_teams(organization.name).each do |remote_team|
           id = remote_team['id']
-          team_map[id] = client.team_repositories(id)
+          team_map[id] = context.client.team_repositories(id)
         end
 
         remote_repositories.each do |remote_repository|
@@ -89,7 +91,8 @@ module Backpack #nodoc
           repository = organization.repository_by_name(name)
 
           repository_full_name = "#{organization.name}/#{repository.name}"
-          remote_teams = client.repository_teams(repository_full_name, :accept => 'application/vnd.github.v3.repository+json')
+          remote_teams =
+            context.client.repository_teams(repository_full_name, :accept => 'application/vnd.github.v3.repository+json')
           remote_teams.each do |remote_team|
             name = remote_team['name']
             if repository.team_by_name?(name)
@@ -107,11 +110,11 @@ module Backpack #nodoc
 
               if update
                 puts "Updating repository team #{team.name} on #{repository.name}"
-                client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
+                context.client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
               end
             else
               puts "Removing repository team #{remote_team['name']} from #{repository.name}"
-              client.remove_team_repository(remote_team['id'], repository_full_name)
+              context.client.remove_team_repository(remote_team['id'], repository_full_name)
               remote_teams.delete(remote_team)
             end
           end
@@ -119,14 +122,14 @@ module Backpack #nodoc
             repository.send(:"#{permission}_teams").each do |team|
               unless remote_teams.any? { |remote_team| remote_team['name'] == team.name }
                 puts "Adding #{permission} repository team #{team.name} to #{repository.name}"
-                client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
+                context.client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
               end
             end
           end
         end
       end
 
-      def converge_repository(client, repository, remote_repository)
+      def converge_repository(context, repository, remote_repository)
         update = false
         update = true if remote_repository['description'].to_s != repository.description.to_s
         update = true if remote_repository['homepage'].to_s != repository.homepage.to_s
@@ -137,19 +140,19 @@ module Backpack #nodoc
 
         if update
           puts "Updating repository #{repository.name}"
-          client.edit_repository(remote_repository['full_name'],
-                                 :description => repository.description,
-                                 :homepage => repository.homepage,
-                                 :private => repository.private?,
-                                 :has_issues => repository.issues?,
-                                 :has_wiki => repository.wiki?,
-                                 :has_downloads => repository.downloads?)
+          context.client.edit_repository(remote_repository['full_name'],
+                                         :description => repository.description,
+                                         :homepage => repository.homepage,
+                                         :private => repository.private?,
+                                         :has_issues => repository.issues?,
+                                         :has_wiki => repository.wiki?,
+                                         :has_downloads => repository.downloads?)
         end
       end
 
-      def converge_hooks(client, organization)
+      def converge_hooks(context, organization)
         organization.repositories.each do |repository|
-          remote_hooks = client.hooks(repository.qualified_name)
+          remote_hooks = context.client.hooks(repository.qualified_name)
           repository.hooks.each do |hook|
             candidate_hooks = remote_hooks.select do |r|
               if hook.singleton?
@@ -163,11 +166,11 @@ module Backpack #nodoc
             end
             if candidate_hooks.empty?
               puts "Creating #{hook.name} hook on repository #{repository.qualified_name}"
-              client.create_hook(repository.qualified_name,
-                                 hook.type,
-                                 hook.config,
-                                 :events => hook.events,
-                                 :active => hook.active?)
+              context.client.create_hook(repository.qualified_name,
+                                         hook.type,
+                                         hook.config,
+                                         :events => hook.events,
+                                         :active => hook.active?)
             else
               remote_hook = candidate_hooks[0]
 
@@ -179,18 +182,18 @@ module Backpack #nodoc
 
               if update
                 puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
-                client.create_hook(repository.qualified_name,
-                                   hook.type,
-                                   hook.config,
-                                   :events => hook.events,
-                                   :active => hook.active?)
+                context.client.create_hook(repository.qualified_name,
+                                           hook.type,
+                                           hook.config,
+                                           :events => hook.events,
+                                           :active => hook.active?)
               end
               remote_hooks.delete(remote_hook)
             end
           end
           remote_hooks.each do |remote_hook|
             puts "Removing #{remote_hook['name']}:#{remote_hook['id']} hook on repository #{repository.qualified_name}"
-            client.remove_hook(repository.qualified_name, remote_hook['id'])
+            context.client.remove_hook(repository.qualified_name, remote_hook['id'])
           end
         end
       end

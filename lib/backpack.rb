@@ -17,5 +17,6 @@ require 'fileutils'
 
 require 'backpack/version'
 require 'backpack/core'
+require 'backpack/context'
 require 'backpack/model'
 require 'backpack/driver'

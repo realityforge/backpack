@@ -26,9 +26,6 @@ else
   exit 1
 end
 
-client = Octokit::Client.new(:netrc => true, :auto_paginate => true)
-client.login
-
 Backpack.organizations.each do |organization|
-  Backpack::Driver.converge(client, organization)
+  Backpack::Driver.converge(Backpack.context, organization)
 end
