@@ -14,6 +14,9 @@
 
 require 'backpack'
 
+# Load the local customization file if present
+require File.expand_path('_backpack.rb') if File.exist?('_backpack.rb')
+
 filename = 'backpack_config.rb'
 if File.exist?(filename)
   require File.expand_path('backpack_config.rb')
