@@ -15,3 +15,4 @@
 require 'backpack'
 
 require 'backpack_plus/repository'
+require 'backpack_plus/travis_hook'

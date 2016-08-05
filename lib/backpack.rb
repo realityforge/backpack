@@ -13,6 +13,7 @@
 #
 
 require 'octokit'
+require 'travis'
 require 'fileutils'
 
 require 'backpack/version'
