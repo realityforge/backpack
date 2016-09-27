@@ -92,17 +92,15 @@ module Backpack #nodoc
         end
 
         remote_repositories.each do |remote_repository|
-          name = remote_repository['name']
-          # TODO: We should remove all permissions if repository is unconfigured
-          next unless organization.repository_by_name?(name)
-          repository = organization.repository_by_name(name)
+          repository_name = remote_repository['name']
+          repository = organization.repository_by_name?(repository_name) ? organization.repository_by_name(repository_name) : nil
 
-          repository_full_name = "#{organization.name}/#{repository.name}"
+          repository_full_name = "#{organization.name}/#{repository_name}"
           remote_teams =
             context.client.repository_teams(repository_full_name, :accept => 'application/vnd.github.v3.repository+json')
           remote_teams.each do |remote_team|
             name = remote_team['name']
-            if repository.team_by_name?(name)
+            if repository && repository.team_by_name?(name)
               permission =
                 repository.admin_team_by_name?(name) ? 'admin' : repository.push_team_by_name?(name) ? 'push' : 'pull'
 
@@ -116,11 +114,11 @@ module Backpack #nodoc
               update = true if (permission == 'pull' && !permissions[:pull])
 
               if update
-                puts "Updating repository team #{team.name} on #{repository.name}"
+                puts "Updating repository team #{team.name} on #{repository_full_name}"
                 context.client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
               end
             else
-              puts "Removing repository team #{remote_team['name']} from #{repository.name}"
+              puts "Removing repository team #{remote_team['name']} from #{repository_full_name}"
               context.client.remove_team_repository(remote_team['id'], repository_full_name)
               remote_teams.delete(remote_team)
             end
@@ -131,7 +129,7 @@ module Backpack #nodoc
                 puts "Adding #{permission} repository team #{team.name} to #{repository.name}"
                 context.client.add_team_repository(team.github_id, repository_full_name, :permission => permission)
               end
-            end
+            end if repository
           end
         end
       end
