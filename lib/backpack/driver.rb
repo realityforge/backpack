@@ -134,7 +134,7 @@ module Backpack #nodoc
         end
       end
 
-      def converge_repository(context, repository, remote_repository)
+      def converge_repository(client, repository, remote_repository)
         update = false
         update = true if remote_repository['description'].to_s != repository.description.to_s
         update = true if remote_repository['homepage'].to_s != repository.homepage.to_s
@@ -145,13 +145,13 @@ module Backpack #nodoc
 
         if update
           puts "Updating repository #{repository.name}"
-          context.client.edit_repository(remote_repository['full_name'],
-                                         :description => repository.description,
-                                         :homepage => repository.homepage,
-                                         :private => repository.private?,
-                                         :has_issues => repository.issues?,
-                                         :has_wiki => repository.wiki?,
-                                         :has_downloads => repository.downloads?)
+          client.edit_repository(remote_repository['full_name'],
+                                 :description => repository.description,
+                                 :homepage => repository.homepage,
+                                 :private => repository.private?,
+                                 :has_issues => repository.issues?,
+                                 :has_wiki => repository.wiki?,
+                                 :has_downloads => repository.downloads?)
         end
       end
 
