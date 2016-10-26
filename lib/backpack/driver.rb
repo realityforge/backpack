@@ -109,9 +109,9 @@ module Backpack #nodoc
 
               permissions = team_map[team.github_id].select { |t| t['name'] == repository.name }[0]['permissions']
 
-              update = true if (permission == 'admin' && !permissions[:admin])
-              update = true if (permission == 'push' && !permissions[:push])
-              update = true if (permission == 'pull' && !permissions[:pull])
+              update = true if (permission == 'admin' && !(permissions[:pull] && permissions[:push] && permissions[:admin]))
+              update = true if (permission == 'push' && !(permissions[:pull] && permissions[:push] && !permissions[:admin]))
+              update = true if (permission == 'pull' && !(permissions[:pull] && !permissions[:push] && !permissions[:admin]))
 
               if update
                 puts "Updating repository team #{team.name} on #{repository_full_name}"
