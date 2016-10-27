@@ -288,7 +288,7 @@ module Backpack
     end
 
     def organization_by_name?(name)
-      !!@repositories[name.to_s]
+      !!@organizations[name.to_s]
     end
 
     def organization_by_name(name)
