@@ -93,7 +93,7 @@ module Backpack
     def tag_value(key)
       self.tags.each do |tag|
         if tag =~ /^#{Regexp.escape(key)}=/
-          return tag[(key.size)...100000]
+          return tag[(key.size + 1)...100000]
         end
       end
       nil
