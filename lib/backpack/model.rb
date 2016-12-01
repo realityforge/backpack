@@ -13,7 +13,7 @@
 #
 
 module Backpack
-  class RepositoryHook < BaseElement
+  class RepositoryHook < Reality::BaseElement
     def initialize(repository, name, options, &block)
       @repository, @name = repository, name
       @events = ['push']
@@ -54,7 +54,7 @@ module Backpack
     attr_accessor :config
   end
 
-  class Repository < BaseElement
+  class Repository < Reality::BaseElement
     def initialize(organization, name, options, &block)
       @organization, @name = organization, name
 
@@ -203,7 +203,7 @@ module Backpack
     end
   end
 
-  class Team < BaseElement
+  class Team < Reality::BaseElement
     def initialize(organization, name, options, &block)
       @organization, @name = organization, name
 
@@ -242,7 +242,7 @@ module Backpack
     end
   end
 
-  class Organization < BaseElement
+  class Organization < Reality::BaseElement
     def initialize(name, options, &block)
       @name = name
       @repositories = {}

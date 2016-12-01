@@ -15,9 +15,9 @@
 require 'octokit'
 require 'travis'
 require 'fileutils'
+require 'reality/base_element'
 
 require 'backpack/version'
-require 'backpack/core'
 require 'backpack/context'
 require 'backpack/base_hook'
 require 'backpack/model'

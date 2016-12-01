@@ -13,7 +13,7 @@
 #
 
 module Backpack
-  class Context < BaseElement
+  class Context < Reality::BaseElement
     def initialize(options = {}, &block)
       @client = nil
       @hooks = []

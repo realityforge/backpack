@@ -26,6 +26,7 @@ Gem::Specification.new do |s|
   s.has_rdoc           = false
   s.rdoc_options       = %w(--line-numbers --inline-source --title backpack)
 
+  s.add_dependency 'reality-core', '= 1.4.0'
   s.add_dependency(%q<octokit>, ['~> 4.0'])
   s.add_dependency(%q<netrc>, ['~> 0.11'])
   s.add_dependency(%q<travis>, ['= 1.8.2'])
