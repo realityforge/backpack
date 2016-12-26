@@ -13,17 +13,22 @@
 #
 
 module Backpack
-  class RepositoryHook < Reality::BaseElement
-    def initialize(repository, name, options, &block)
-      @repository, @name = repository, name
+  Reality::Logging.configure(Backpack, ::Logger::WARN)
+
+  Reality::Model::Repository.new(:Backpack, Backpack) do |r|
+    r.model_element(:organization)
+    r.model_element(:team, :organization)
+    r.model_element(:repository, :organization)
+    r.model_element(:repository_hook, :repository, :access_method => :hooks, :inverse_access_method => :hook)
+  end
+
+  class RepositoryHook
+    def pre_init
       @events = ['push']
       @active = true
+      @config_key = nil
       @config = {}
-      super(options, &block)
     end
-
-    attr_reader :name
-    attr_reader :repository
 
     attr_writer :type
 
@@ -54,38 +59,35 @@ module Backpack
     attr_accessor :config
   end
 
-  class Repository < Reality::BaseElement
-    def initialize(organization, name, options, &block)
-      @organization, @name = organization, name
-
+  class Repository
+    def pre_init
       @tags = []
 
       @admin_teams = []
       @pull_teams = []
       @push_teams = []
-
-      @hooks = {}
-
-      options = options.dup
-
-      (options.delete(:admin_teams) || {}).each do |team|
-        add_admin_team(team)
-      end
-      (options.delete(:push_teams) || {}).each do |team|
-        add_push_team(team)
-      end
-      (options.delete(:pull_teams) || {}).each do |team|
-        add_pull_team(team)
-      end
-
-      super(options, &block)
     end
-
-    attr_reader :organization
-    attr_reader :name
 
     def qualified_name
       "#{self.organization.name}/#{self.name}"
+    end
+
+    def admin_teams=(*admin_teams)
+      admin_teams.each do |team|
+        add_admin_team(team)
+      end
+    end
+
+    def push_teams=(*push_teams)
+      push_teams.each do |team|
+        add_push_team(team)
+      end
+    end
+
+    def pull_teams=(*pull_teams)
+      pull_teams.each do |team|
+        add_pull_team(team)
+      end
     end
 
     attr_accessor :tags
@@ -133,24 +135,6 @@ module Backpack
 
     def downloads?
       @downloads.nil? ? false : !!@downloads
-    end
-
-    def hook(name, config = {}, &block)
-      raise "Hook already exists with name #{name} for repository #{self.name}" if @hooks[name.to_s]
-      @hooks[name.to_s] = RepositoryHook.new(self, name, config, &block)
-    end
-
-    def hook_by_name?(name)
-      !!@hooks[name.to_s]
-    end
-
-    def hook_by_name(name)
-      raise "Hook with name #{name} does not exist for repository #{self.name}" unless @hooks[name.to_s]
-      @hooks[name.to_s]
-    end
-
-    def hooks
-      @hooks.values.dup
     end
 
     def admin_teams
@@ -203,25 +187,15 @@ module Backpack
     end
   end
 
-  class Team < Reality::BaseElement
-    def initialize(organization, name, options, &block)
-      @organization, @name = organization, name
-
+  class Team
+    def pre_init
       @admin_repositories = []
       @pull_repositories = []
       @push_repositories = []
-
-      super(options, &block)
+      @permission = 'pull'
     end
 
-    attr_reader :organization
-    attr_reader :name
-
-    attr_writer :permission
-
-    def permission
-      @permission || 'pull'
-    end
+    attr_accessor :permission
 
     # This id begins null and is populated during converge with the actual github id
     attr_accessor :github_id
@@ -239,78 +213,6 @@ module Backpack
     # List of repositories with push access. Is automatically updated
     def push_repositories
       @push_repositories
-    end
-  end
-
-  class Organization < Reality::BaseElement
-    def initialize(name, options, &block)
-      @name = name
-      @repositories = {}
-      @teams = {}
-
-      super(options, &block)
-    end
-
-    attr_reader :name
-
-    def repository(name, options = {}, &block)
-      raise "Repository named #{name} already defined in organization #{self.name}" if @repositories[name.to_s]
-      @repositories[name.to_s] = Repository.new(self, name, options, &block)
-    end
-
-    def repository_by_name?(name)
-      !!@repositories[name.to_s]
-    end
-
-    def repository_by_name(name)
-      raise "No repository named #{name} defined in organisation #{self.name}" unless @repositories[name.to_s]
-      @repositories[name.to_s]
-    end
-
-    def repositories
-      @repositories.values
-    end
-
-    def team(name, options = {}, &block)
-      raise "Repository named #{name} already defined in organization #{self.name}" if @teams[name.to_s]
-      @teams[name.to_s] = Team.new(self, name, options, &block)
-    end
-
-    def team_by_name?(name)
-      !!@teams[name.to_s]
-    end
-
-    def team_by_name(name)
-      raise "No team named #{name} defined in organisation #{self.name}" unless @teams[name.to_s]
-      @teams[name.to_s]
-    end
-
-    def teams
-      @teams.values
-    end
-  end
-
-  class << self
-    def organization(name, options = {}, &block)
-      raise "Organization named #{name} already defined" if self.organization_map[name.to_s]
-      self.organization_map[name.to_s] = Organization.new(name, options, &block)
-    end
-
-    def organization_by_name?(name)
-      !!@organizations[name.to_s]
-    end
-
-    def organization_by_name(name)
-      raise "No organization named #{name} defined." unless self.organization_map[name.to_s]
-      self.organization_map[name.to_s]
-    end
-
-    def organizations
-      self.organization_map.values
-    end
-
-    def organization_map
-      @organizations ||= {}
     end
   end
 end
