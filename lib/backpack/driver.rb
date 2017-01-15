@@ -181,12 +181,21 @@ module Backpack #nodoc
 
               update = false
 
-              update = true if remote_hook[:active] != hook.active?
-              update = true if remote_hook[:events].sort != hook.events.sort
-              update = true unless hash_same(remote_hook[:config].to_h, hook.config, hook.password_config_keys)
+              if remote_hook[:active] != hook.active?
+                update = true
+                puts "Updating #{hook.name} hook on repository #{repository.qualified_name} to update active status to #{hook.active?}"
+              end
+
+              if remote_hook[:events].sort != hook.events.sort
+                update = true
+                puts "Updating #{hook.name} hook on repository #{repository.qualified_name} to update events from #{remote_hook[:events].sort.inspect} to #{hook.events.sort.inspect}"
+              end
+              unless hash_same(remote_hook[:config].to_h, hook.config, hook.password_config_keys)
+                update = true
+                puts "Updating #{hook.name} hook on repository #{repository.qualified_name} to update config from #{remote_hook[:config].to_h.inspect} to #{hook.config.inspect} (Password keys #{hook.password_config_keys.inspect})"
+              end
 
               if update
-                puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
                 context.client.edit_hook(repository.qualified_name,
                                          remote_hook[:id],
                                          hook.type,
