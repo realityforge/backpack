@@ -187,11 +187,12 @@ module Backpack #nodoc
 
               if update
                 puts "Updating #{hook.name} hook on repository #{repository.qualified_name}"
-                context.client.create_hook(repository.qualified_name,
-                                           hook.type,
-                                           hook.config,
-                                           :events => hook.events,
-                                           :active => hook.active?)
+                context.client.edit_hook(repository.qualified_name,
+                                         remote_hook[:id],
+                                         hook.type,
+                                         hook.config,
+                                         :events => hook.events,
+                                         :active => hook.active?)
               end
               remote_hooks.delete(remote_hook)
             end
