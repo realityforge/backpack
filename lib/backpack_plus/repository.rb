@@ -19,12 +19,13 @@ class Backpack::Repository
          :config => {:address => email_address, :send_from_author => '0'})
   end
 
-  def jira_hook(jira_endpoint_url)
+  def jira_hook(jira_endpoint_url, options = {})
+    insecure_ssl = options[:insecure_ssl].nil? ? '0' : !!options[:insecure_ssl] ? '1' : '0'
     hook('jira-hook',
          :type => 'web',
          :config_key => :url,
          :events => %w(issue_comment pull_request pull_request_review_comment push),
-         :config => {:content_type => 'json', :url => jira_endpoint_url})
+         :config => {:content_type => 'json', :url => jira_endpoint_url, :insecure_ssl => insecure_ssl})
   end
 
   def ci_hook(hook_endpoint_url)
@@ -32,7 +33,7 @@ class Backpack::Repository
          :type => 'web',
          :config_key => :url,
          :events => %w(issue_comment pull_request),
-         :config => {:insecure_ssl => '1', :url => hook_endpoint_url})
+         :config => {:insecure_ssl => '1', :url => hook_endpoint_url, :content_type=> 'form'})
 
   end
 
