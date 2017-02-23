@@ -153,6 +153,37 @@ module Backpack #nodoc
                                  :has_wiki => repository.wiki?,
                                  :has_downloads => repository.downloads?)
         end
+        remote_branches = client.branches(repository.qualified_name)
+        remote_branches.each do |remote_branch|
+          branch_name = remote_branch['name']
+          branch = repository.branch_by_name?(branch_name) ? repository.branch_by_name(branch_name) : nil
+          protection = client.branch_protection(repository.qualified_name, branch_name, :accept => Octokit::Preview::PREVIEW_TYPES[:branch_protection])
+          if branch && branch.protect?
+            protect = false
+            if branch.required_status_checks?
+              protect = true if protection.nil?
+              if protection
+                protect = true unless protection[:required_status_checks]
+                if protection[:required_status_checks]
+                  checks = protection[:required_status_checks]
+                  protect = true if checks[:include_admins] != branch.include_admins?
+                  protect = true if checks[:strict] != branch.strict?
+                  protect = true if checks[:contexts].sort != branch.contexts.sort
+                end
+              end
+            end
+
+            if protect
+              puts "Updating protection on branch #{branch.name} in repository #{repository.qualified_name}"
+              config = {:accept => Octokit::Preview::PREVIEW_TYPES[:branch_protection]}
+              config[:required_status_checks] = {:include_admins => branch.include_admins?, :strict => branch.strict?, :contexts => branch.contexts} if branch.required_status_checks?
+              client.protect_branch(repository.qualified_name, branch.name, config)
+            end
+          elsif protection
+            puts "Un-protecting branch #{branch.name} in repository #{repository.qualified_name}"
+            client.unprotect_branch(repository.qualified_name, branch.name, :accept => Octokit::Preview::PREVIEW_TYPES[:branch_protection])
+          end
+        end
       end
 
       def converge_hooks(context, organization)

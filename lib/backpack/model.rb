@@ -19,7 +19,46 @@ module Backpack
     r.model_element(:organization)
     r.model_element(:team, :organization)
     r.model_element(:repository, :organization)
+    r.model_element(:branch, :repository, :access_method => :branches)
     r.model_element(:repository_hook, :repository, :access_method => :hooks, :inverse_access_method => :hook)
+  end
+
+  class Branch
+    def protect?
+      required_status_checks?
+    end
+
+    attr_writer :required_status_checks
+
+    # Require the branch to have successful status checks before merging?
+    def required_status_checks?
+      @required_status_checks.nil? ? false : @required_status_checks
+    end
+
+    def strict=(strict)
+      self.required_status_checks = true
+      @strict = strict
+    end
+
+    # Require branches to be up to date before merging?
+    def strict?
+      @strict.nil? ? false : @strict
+    end
+
+    def include_admins=(include_admins)
+      self.required_status_checks = true
+      @include_admins = include_admins
+    end
+
+    # Enforce required status checks for repository administrators.
+    def include_admins?
+      @include_admins.nil? ? false : @include_admins
+    end
+
+    # The list of status checks to require in order to merge into this branch.
+    def contexts
+      @contexts ||= []
+    end
   end
 
   class RepositoryHook
@@ -99,6 +138,16 @@ module Backpack
         end
       end
       nil
+    end
+
+    def tag_values(key)
+      values = []
+      self.tags.each do |tag|
+        if tag =~ /^#{Regexp.escape(key)}=/
+          values << tag[(key.size + 1)...100000]
+        end
+      end
+      values
     end
 
     attr_writer :description
