@@ -180,7 +180,7 @@ module Backpack #nodoc
               client.protect_branch(repository.qualified_name, branch.name, config)
             end
           elsif protection
-            puts "Un-protecting branch #{branch.name} in repository #{repository.qualified_name}"
+            puts "Un-protecting branch #{branch_name} in repository #{repository.qualified_name}"
             client.unprotect_branch(repository.qualified_name, branch.name, :accept => Octokit::Preview::PREVIEW_TYPES[:branch_protection])
           end
         end
