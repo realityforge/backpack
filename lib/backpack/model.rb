@@ -55,6 +55,8 @@ module Backpack
       @include_admins.nil? ? false : @include_admins
     end
 
+    attr_writer :contexts
+
     # The list of status checks to require in order to merge into this branch.
     def contexts
       @contexts ||= []
