@@ -44,8 +44,9 @@ class Backpack::Repository
   def travis_hook(user, token)
     hook('travis',
          :type => 'web',
+         :config_key => :url,
          :events => %w(issue_comment member public pull_request push),
-         :password_config_keys => [:secret],
+         :password_config_keys => %w(secret),
          :config => { :url => 'https://notify.travis-ci.org/', :secret => token, :insecure_ssl => '0', :content_type => 'form' })
   end
 
