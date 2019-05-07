@@ -17,11 +17,28 @@ module Backpack #nodoc
     class << self
       def converge(context, organization)
         run_hook(context, :pre_organization, organization)
-        converge_teams(context, organization) unless organization.is_user_account?
+        converge_organization(context, organization) unless organization.is_user_account?
         converge_repositories(context, organization)
         converge_subscriptions(context, organization)
         converge_hooks(context, organization)
         run_hook(context, :post_organization, organization)
+      end
+
+      def converge_organization(context, organization)
+        remote_organization = context.client.organization(organization.name)
+
+        update = false
+        update = true if remote_organization['has_organization_projects'].to_s != organization.organization_projects?.to_s
+        update = true if remote_organization['has_repository_projects'].to_s != organization.repository_projects?.to_s
+
+        if update
+          puts "Updating organization #{organization.name}"
+          context.client.update_organization(organization.name,
+                                             :has_organization_projects => organization.organization_projects?,
+                                             :has_repository_projects => organization.repository_projects?)
+        end
+
+        converge_teams(context, organization)
       end
 
       def converge_teams(context, organization)
@@ -157,6 +174,7 @@ module Backpack #nodoc
         update = true if remote_repository['has_issues'].to_s != repository.issues?.to_s
         update = true if remote_repository['has_projects'].to_s != repository.projects?.to_s
         update = true if remote_repository['has_wiki'].to_s != repository.wiki?.to_s
+        update = true if remote_repository['default_branch'].to_s != repository.default_branch.to_s
         if remote_repository['archived'].to_s != repository.archived?.to_s
           if 'true' == remote_repository['archived'].to_s
             raise "Can not un-archive repository #{repository.name} via the API"
@@ -173,6 +191,7 @@ module Backpack #nodoc
           client.edit_repository(remote_repository['full_name'],
                                  :description => repository.description,
                                  :homepage => repository.homepage,
+                                 :default_branch => repository.default_branch,
                                  :private => repository.private?,
                                  :has_issues => repository.issues?,
                                  :has_projects => repository.projects?,
