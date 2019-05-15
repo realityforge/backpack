@@ -254,7 +254,7 @@ module Backpack #nodoc
       end
 
       def converge_subscriptions(context, organization)
-        organization.repositories.select{|repository|repository.archived?}.each do |repository|
+        organization.repositories.select(&:archived?).each do |repository|
           begin
             context.client.subscription(repository.qualified_name)
             puts "Removing subscription from archived repository #{repository.qualified_name}"
