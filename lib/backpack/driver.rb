@@ -217,7 +217,7 @@ module Backpack #nodoc
             rescue Octokit::NotFound
               nil
             end
-          if branch && branch.protect?
+          if branch&.protect?
             protect = false
             if branch.require_status_check?
               protect = true if protection.nil?
