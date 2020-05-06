@@ -205,6 +205,7 @@ module Backpack #nodoc
                                  :default_branch => repository.default_branch,
                                  :private => repository.private?,
                                  :has_issues => repository.issues?,
+                                 :has_projects => repository.projects?,
                                  :archived => repository.archived?,
                                  :allow_squash_merge => repository.allow_squash_merge?,
                                  :allow_merge_commit => repository.allow_merge_commit?,
