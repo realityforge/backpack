@@ -207,7 +207,7 @@ module Backpack #nodoc
           updated_features << 'archive_status'
         end
 
-        if !updated_features.empty?
+        unless updated_features.empty?
           if 'true' == remote_repository['archived'].to_s
             raise "Can not modify repository #{repository.name} as it is archived."
           end
