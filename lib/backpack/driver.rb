@@ -179,7 +179,6 @@ module Backpack #nodoc
           return
         end
 
-        update = false
         updated_features = []
         updated_features << "description => #{repository.description}" if remote_repository['description'].to_s != repository.description.to_s
         updated_features << "homepage => #{repository.homepage}" if remote_repository['homepage'].to_s != repository.homepage.to_s
